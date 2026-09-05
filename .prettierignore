@@ -1,0 +1,7 @@
+node_modules/
+.next/
+artifacts/
+package-lock.json
+HELIOS-AGENTIC-ENGINEERING-PROMPT.md
+HELIOS-RUN-PROMPTS.md
+next-env.d.ts

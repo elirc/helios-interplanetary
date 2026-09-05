@@ -1,0 +1,51 @@
+{
+  "name": "helios-interplanetary",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "configure": "node scripts/configure.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "setup": "npm run configure && npm run db:up && npm run db:migrate && npm run db:seed",
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "tsx --env-file-if-exists=.env --test tests/unit/*.test.ts",
+    "test:integration": "tsx --env-file-if-exists=.env --test --test-concurrency=1 tests/integration/*.test.ts",
+    "test:api": "tsx --env-file-if-exists=.env scripts/api-smoke.ts",
+    "test:e2e": "node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
+    "check": "npm run lint && npm run typecheck && npm test && npm run test:integration && npm run build",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose stop",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/database.ts migrate",
+    "db:seed": "tsx --env-file-if-exists=.env scripts/database.ts seed",
+    "db:reset": "tsx --env-file-if-exists=.env scripts/database.ts reset --confirm-disposable",
+    "scenario": "tsx --env-file-if-exists=.env scripts/scenario.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0",
+    "next": "16.3.4",
+    "pg": "8.23.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.4",
+    "prettier": "3.8.1",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.0"
+  }
+}

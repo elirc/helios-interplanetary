@@ -1,0 +1,20 @@
+name: helios
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: helios
+      POSTGRES_PASSWORD: helios_local_only
+      POSTGRES_DB: helios
+    ports:
+      - "127.0.0.1:5438:5432"
+    volumes:
+      - helios-data:/var/lib/postgresql/data
+      - ./db/init-test.sql:/docker-entrypoint-initdb.d/01-test.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helios -d helios"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+volumes:
+  helios-data:
