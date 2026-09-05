@@ -5,6 +5,7 @@ import { PERSONAS } from "./identity";
 import { FIXTURE_START, stableReadingId } from "./scenarios";
 import { generateScenario } from "../domain/simulation";
 import { ingestReadingTx } from "./telemetry";
+import { seedEnterpriseTx } from "./enterprise-fixtures";
 
 export async function seed(pool: Pool) {
   await transaction(pool, async (client) => {
@@ -63,6 +64,7 @@ export async function seed(pool: Pool) {
         observedAt: readings.at(-1)!.observedAt,
       });
     }
+    await seedEnterpriseTx(client);
   });
 }
 

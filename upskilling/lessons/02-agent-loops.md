@@ -24,7 +24,7 @@ For example, “make incident processing robust” is hard to evaluate. “Twelv
 
 Use [the task template](../templates/task-contract.md). Include an outcome, scope, inputs, acceptance checks, permissions, stop conditions, and one learning target. State behaviors without dictating every implementation detail.
 
-For the upcoming maintenance slice, you might require exactly one work order per incident, server-enforced tenant isolation, valid initial state, and an inspectable UI. Choosing a work-order ID scheme can be left to the agent. Defining what counts as duplicate creation cannot.
+For the maintenance slice that was built after M01, the contract required exactly one work order per incident, server-enforced tenant isolation, valid initial state, and an inspectable UI. Reconstruct those requirements before reading the implementation. Choosing a work-order ID scheme could be left to the agent. Defining what counts as duplicate creation could not.
 
 Read the agent's proposed contract before a long run. Look for omitted failure conditions, hidden scope growth, and assertions that could pass without the intended behavior. A contract is useful only if you can judge the result independently of the implementation narrative.
 

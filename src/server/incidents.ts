@@ -47,6 +47,18 @@ export async function transitionIncident(
         "ACKNOWLEDGEMENT_REQUIRED",
         "Acknowledge the incident before resolving it.",
       );
+    if (action === "resolve") {
+      const activeWork = await client.query(
+        "SELECT id FROM work_orders WHERE organization_id=$1 AND incident_id=$2 AND status NOT IN ('COMPLETED','CANCELLED')",
+        [principal.organizationId, id],
+      );
+      if (activeWork.rowCount)
+        throw new DomainError(
+          409,
+          "REPAIR_INCOMPLETE",
+          "Complete and verify the linked work order before resolving this incident.",
+        );
+    }
     const column = action === "acknowledge" ? "acknowledged_at" : "resolved_at";
     await client.query(
       `UPDATE incidents SET status=$3, ${column}=$4 WHERE organization_id=$1 AND id=$2`,

@@ -1,29 +1,27 @@
-# Outcome roadmap
+﻿# Delivered local milestones
 
-## Completed: M01 — Telemetry to incident
+This roadmap describes the finite program in [Run 002](../exec-plans/002-complete-local-program.md). It maps each milestone to implemented behavior and reproducible evidence. [Current state](current-state.md) reports final verification separately. The original enterprise catalog contains additional possible products; it is not a claim that every catalog feature is implemented.
 
-Delivered a locally runnable Mission Control, PostgreSQL persistence, deterministic scenario, signed local personas, incident lifecycle, audit evidence, and a separate teaching curriculum. Local acceptance checks passed on September 5, 2026; evidence is recorded in [Run 001](../exec-plans/001-telemetry-incident.md). Human learning remains unassessed.
+| Milestone                         | Implementation                                                                                                             | Primary evidence                                                                                                          |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| M01 Telemetry and incidents       | Deterministic readings, ordering, idempotency, incident lifecycle, tenant identity and Mission Control.                    | `tests/integration/mission.test.ts`, original browser workflows and [Run 001](../exec-plans/001-telemetry-incident.md).   |
+| M02 Maintenance                   | One work order per incident, explicit lifecycle, checklist and attributable commands.                                      | `tests/integration/repair.test.ts`.                                                                                       |
+| M03 Inventory                     | Transactional reservation, competition for the last item, release and consumption.                                         | Concurrent reservation and completion tests in the repair suite.                                                          |
+| M04 Procurement                   | Shortage requests, human budget approval, rejection/cancellation and commitments.                                          | Competing budget approvals and cancellation tests.                                                                        |
+| M05 Logistics                     | Earth stock, vessel and docking-window reservations, delay, reroute and receipt.                                           | Delayed cargo and duplicate receipt test; browser scenario A/C.                                                           |
+| M06 Workforce and recovery        | 200 crew fixtures, certification and availability checks, fresh recovery telemetry and postmortem.                         | Crew/checklist/verification test and complete browser repair.                                                             |
+| M07 Simulation and energy         | Persisted clock, speed, paused/resumed operation, solar/battery balance and fabrication dependency.                        | Energy unit and platform integration tests; browser solar crisis.                                                         |
+| M08 Durable workflows             | Outbox, fenced leases, bounded retries, receipts, dead-letter redrive, timers and notifications.                           | Platform suite, including an actual child-process crash and recovery.                                                     |
+| M09 Intelligence                  | Four adviser roles, bounded read-tool plans, persisted traces, strict output rules and human-approved actions.             | Intelligence integration and unsafe-proposal browser checks.                                                              |
+| M10 Knowledge and evaluations     | Versioned approved documents, chunk citations, full-text plus token-hash retrieval and recorded fixture evaluations.       | Tenant/version isolation and 14-case evaluation fixture.                                                                  |
+| M11 Billing and ledger            | Usage, invoices, simulated provider uncertainty, signed webhooks, reconciliation, refunds and balanced immutable journals. | Billing integration suite and browser payment scenario.                                                                   |
+| M12 Support and security          | Payment support cases, simulated suspicious access, investigation findings and resolution.                                 | Tenant/role API checks and browser investigation workflow.                                                                |
+| M13 Reliability and observability | Backlog and poison exercises, structured logs, tenant request spans, metrics, benchmark and recovery probes.               | Platform suite and local operational artifacts listed in Run 002.                                                         |
+| M14 Deployment package            | Non-root container, migration job, app/worker configuration, health and backup/restore runbook.                            | [Deployment guide](../../deploy/README.md) and Run 002 execution evidence.                                                |
+| M15 Integration and retrospective | Purpose-specific operations views, six guided demos, architecture and a separate retrospective curriculum.                 | Browser suite, [demo guide](../runbooks/demo-scenarios.md) and [retrospective](../../upskilling/retrospective/README.md). |
 
-## Next candidate: M02 — Maintenance work order
+## Further work requires a new contract
 
-Outcome: an acknowledged incident can create one maintenance work order linked to the affected asset and incident.
+Public identity and cloud hosting, live payment integration, learned embeddings, live-model evaluation, and broader enterprise administration are outside the completed local contract. Select a specific outcome, acceptance criteria and operational environment before extending them.
 
-Define ownership, idempotent creation, required tasks, valid state transitions, audit records, and a useful inspection UI. Verify duplicate creation and cross-tenant denial. Learning target: the developer authors a task contract and predicts a failure before implementation. Complete this contract from actual M01 state before coding.
-
-## Following candidate: M03 — Inventory reservation correctness
-
-Outcome: a work order requests a part, reserves available stock, or enters awaiting-parts state.
-
-Preserve `available = on_hand - reserved`, nonnegative stock, and no committed over-reservation. Define release/cancellation and replay behavior. Test simultaneous competing reservations with real transactions. Learning target: the developer designs the concurrency test before the agent implements the fix.
-
-## Later horizons
-
-- Procurement approval and fulfillment extend the repair scenario.
-- Crew certification and repair verification complete a recovery demo.
-- Durable background work adds retries, restart recovery, and reconciliation where needed.
-- A narrow diagnostic agent uses authorized tools, sources, and evaluations.
-- RAG adds source-grounded procedure retrieval with measured quality.
-- Selected distributed-system exercises introduce duplicate/out-of-order events, consumer failure, and backpressure.
-- Billing, ledger, logistics, energy, and cloud deployment follow explicit scenario needs.
-
-Only detail a horizon when evidence and the active learning goal justify it. Do not generate dozens of speculative PR specifications.
+Human learning remains unassessed. The next learning action is to run a demo and reconstruct its invariant using the retrospective, then record your own evidence in the progress tracker.

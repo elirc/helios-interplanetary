@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { Principal } from "../domain/contracts";
 import { DomainError } from "./errors";
+import { trace } from "@opentelemetry/api";
 
 export const PERSONAS: Record<string, Principal> = {
   controller: {
@@ -112,7 +113,9 @@ export function principalFromRequest(request: Request) {
     .map((part) => part.trim())
     .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
     ?.slice(SESSION_COOKIE.length + 1);
-  return verifySession(token);
+  const principal = verifySession(token);
+  trace.getActiveSpan()?.setAttribute("helios.organization_id", principal.organizationId);
+  return principal;
 }
 
 export function requireOperator(principal: Principal) {

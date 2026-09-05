@@ -1,0 +1,47 @@
+name: helios-preview
+x-runtime: &runtime
+  image: helios-local:latest
+  env_file: ../.env
+  environment:
+    DATABASE_URL: postgresql://helios:helios_local_only@postgres:5432/helios
+    APP_ORIGIN: http://127.0.0.1:3002
+    DEMO_MODE: "true"
+    HELIOS_MODEL_PROVIDER: fixture
+  networks: [helios-data]
+services:
+  migrate:
+    <<: *runtime
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["sh", "-c", "npm run db:migrate && npm run db:seed"]
+    restart: "no"
+  app:
+    <<: *runtime
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports: ["127.0.0.1:3002:3000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  worker:
+    <<: *runtime
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["npm", "run", "worker"]
+    restart: unless-stopped
+networks:
+  helios-data:
+    external: true
+    name: helios_default

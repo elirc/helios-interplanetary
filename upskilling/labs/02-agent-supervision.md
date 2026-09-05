@@ -2,9 +2,9 @@
 
 These exercises practice your decisions as the engineer supervising AI work. Ask the agent to use LAB mode and wait for your attempt. Use BUILD mode only once you are ready for implementation.
 
-## Exercise 1: author the next task
+## Exercise 1: reconstruct a task contract
 
-Use [the contract template](../templates/task-contract.md) for M02: creating a maintenance work order from an incident. Write it before asking the agent for a full implementation plan.
+Use [the contract template](../templates/task-contract.md) for M02: creating a maintenance work order from an incident. This behavior now exists. Reconstruct its contract before reading the implementation, then compare your specification with the service and tests. To practice new implementation afterward, choose one bounded extension from your review instead of rebuilding M02 in the main application.
 
 Include an observable outcome, an explicit scope boundary, a duplicate-creation example, a tenant-denial example, and a testable initial-state rule. State the assumptions you are leaving open.
 
@@ -18,7 +18,7 @@ Before reading its conclusions, inspect one code path yourself. Compare your obs
 
 ## Exercise 3: issue a targeted correction
 
-Choose a real gap from the review or a learning improvement such as testing equal-time observations. Write a correction that:
+Choose a real gap from the review or a learning improvement. Equal-time observations are already covered; do not present them as an unimplemented feature. Write a correction that:
 
 - Identifies the unmet behavior or evidence gap.
 - Preserves already valid work.

@@ -18,7 +18,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "tsx --env-file-if-exists=.env --test tests/unit/*.test.ts",
     "test:integration": "tsx --env-file-if-exists=.env --test --test-concurrency=1 tests/integration/*.test.ts",
-    "test:api": "tsx --env-file-if-exists=.env scripts/api-smoke.ts",
+    "test:api": "tsx --env-file-if-exists=.env scripts/api-smoke.ts && tsx --env-file-if-exists=.env scripts/program-smoke.ts",
     "test:e2e": "node --env-file-if-exists=.env node_modules/@playwright/test/cli.js test",
     "check": "npm run lint && npm run typecheck && npm test && npm run test:integration && npm run build",
     "db:up": "docker compose up -d --wait",
@@ -26,9 +26,14 @@
     "db:migrate": "tsx --env-file-if-exists=.env scripts/database.ts migrate",
     "db:seed": "tsx --env-file-if-exists=.env scripts/database.ts seed",
     "db:reset": "tsx --env-file-if-exists=.env scripts/database.ts reset --confirm-disposable",
-    "scenario": "tsx --env-file-if-exists=.env scripts/scenario.ts"
+    "scenario": "tsx --env-file-if-exists=.env scripts/scenario.ts",
+    "showcase": "tsx --env-file-if-exists=.env scripts/showcase.ts --confirm-disposable",
+    "worker": "tsx --env-file-if-exists=.env scripts/worker.ts"
   },
   "dependencies": {
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/sdk-trace-base": "2.11.0",
+    "@vercel/otel": "2.1.3",
     "lucide-react": "^0.577.0",
     "next": "16.3.4",
     "pg": "8.23.0",

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { DomainError } from "./errors";
+import { trace, SpanStatusCode } from "@opentelemetry/api";
 
 export function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
@@ -32,6 +33,23 @@ export async function readJson(request: Request) {
 }
 
 export async function route(work: () => Promise<NextResponse>) {
+  return trace.getTracer("helios-http").startActiveSpan("helios.request", async (span) => {
+    try {
+      const response = await handleRoute(work);
+      span.setAttributes({
+        "http.response.status_code": response.status,
+        "helios.request_id": response.headers.get("X-Request-Id") ?? "",
+      });
+      response.headers.set("X-Trace-Id", span.spanContext().traceId);
+      if (response.status >= 500) span.setStatus({ code: SpanStatusCode.ERROR });
+      return response;
+    } finally {
+      span.end();
+    }
+  });
+}
+
+async function handleRoute(work: () => Promise<NextResponse>) {
   const requestId = randomUUID();
   const started = Date.now();
   try {

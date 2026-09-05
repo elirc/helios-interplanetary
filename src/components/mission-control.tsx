@@ -487,6 +487,11 @@ export function MissionControl() {
             Event log
           </button>
         </nav>
+        <Link href="/operations" className="nav-item">
+          <Layers3 size={17} />
+          Operations hub
+          <ArrowUpRight size={14} />
+        </Link>
         <div className="sidebar-station">
           <span className="product-label">ACTIVE STATION</span>
           <div>

@@ -1,37 +1,41 @@
-# Current implementation state
+﻿# Current implementation state
 
-Completed milestone: M01, telemetry-to-incident and separate upskilling content. Verified locally on September 5, 2026.
+**Completed:** [Run 002 — the local M01–M15 workflow program](../exec-plans/002-complete-local-program.md). The M01 baseline is commit `8a0e1e7`; the final local checkpoint is tagged `helios-local-m15`. Both original prompt documents are preserved.
 
-Completed plan and evidence: [Run 001](../exec-plans/001-telemetry-incident.md).
+Open **http://127.0.0.1:3002**, enter Mission Control, then select **Operations hub**. The packaged app and independent worker are running. Both virtual clocks are paused so the review world stays understandable.
 
-## Implemented
+## Delivered behavior
 
-- Next.js 16 / React 19 / TypeScript modular monolith with PostgreSQL 17.
-- One station and pump in each of two isolated fixture organizations.
-- Signed local demo personas, role restrictions, and same-origin mutation protection.
-- Persistent readings, deterministic scenario batches, reading/run idempotency, late-data ordering, one active incident per asset, acknowledgement/resolution, and audit evidence.
-- Mission Control charts, station schematic, scenario controls, incident drawer/registry, and operational event log.
-- Setup/migration/fixture/scenario commands, unit/integration/API/browser suites, and CI configuration.
-- Separate [upskilling curriculum](../../upskilling/README.md) with lessons, labs, solutions, templates, and a progress tracker.
+Next.js / TypeScript modular monolith, PostgreSQL 17 and a durable worker. Maintenance connects incidents, inventory reservations, budget approval, cargo and docking, certified crew, checklist execution and fresh recovery telemetry. Other views cover energy and manufacturing dependencies, versioned knowledge, four bounded adviser roles, human-approved actions, fixture evaluations, billing and simulated payment uncertainty, balanced immutable journals, support/security investigations, event retries, workflow history, notifications, request spans and metrics.
 
-## Validation status
+The [milestone map](roadmap.md) connects each outcome to evidence. Follow [the six demos](../runbooks/demo-scenarios.md). The separate [retrospective](../../upskilling/retrospective/README.md) explains the actual contracts, review findings, failures, checks and recovery decisions. Human learning remains unassessed.
 
-`npm run check` passed: lint, TypeScript, eight unit tests, thirteen PostgreSQL integration tests, and the production build. HTTP smoke checks passed, including scenario replay, tenant isolation, role restrictions, and origin protection. All three Playwright workflows passed against the final build: operator lifecycle, mobile/read-only access, and connection failure/recovery. Desktop, mobile, and incident screenshots were visually inspected.
+## Verification
 
-An actual application-process restart preserved 48 readings, one active incident, and one scenario execution. After verification, the development fixture was reset to 36 nominal readings and zero incidents. The running app's health endpoint reports a connected database. Local logs, restart evidence, and screenshots are in ignored `artifacts/`; CI is configured but has not run remotely.
+- Combined check: lint, TypeScript, 11 unit tests, 35 PostgreSQL integration tests and production build passed.
+- After approval review changes: lint/types and all five intelligence tests passed, including the added expiry/stale-state regression. The full integration inventory is 36 cases, verified across the combined and focused runs.
+- All 8 browser workflows passed against the container application; both HTTP smoke programs passed. Desktop, repair, adviser and mobile screenshots were visually inspected.
+- Worker tests include an actual child-process exit and recovery. The live container worker also consumed an HTTP-generated adviser-summary event into exactly one notification.
+- Backup/restore matched 2 organizations, 98 readings, 1 work order, 1 invoice, 2 balanced journals and 39 outbox records. Container replacement independently preserved the operational/financial counts.
+- Request-span storage, a nonzero trace ID, fresh worker heartbeat and Prometheus output passed. The final preview check observed 60 request samples.
+- A local 30-request sample at concurrency 3 passed with 0 errors, p50 649.6 ms and p95 1262.1 ms after build completion. An earlier sample during the build had 1 error and is preserved in the evidence; its exact cause is unconfirmed. No production capacity/SLO claim is established.
+- Remote CI is configured but has not run.
+- Formatting and all 98 local documentation links passed; 91 deployed source/script/migration files matched the workspace by SHA-256.
 
-## Environment and recovery
+The [execution record](../exec-plans/002-complete-local-program.md) identifies logs and reproduction commands. Ignored `artifacts/` contains screenshots, the browser report, benchmark samples, backup archive and runtime evidence.
 
-Workspace: `C:/Users/Owner/Desktop/astra1`, local Git branch `main`, no commits yet. All application files are newly created; preserve the two pre-existing prompt documents.
+## Review data and recovery
 
-PostgreSQL: project `helios`, service `postgres`, loopback port 5438, development database `helios`, test database `helios_test`, persistent named volume `helios_helios-data`. An unrelated database on port 5442 is outside this project.
+The review world contains a completed repair and recovered solar crisis, an uncertain payment awaiting reconciliation, an open simulated investigation, four adviser runs and 40 notifications (the showcase plus the live-worker probe). Both clocks remain paused. Use the UI to explore their history, or stop the worker and run `npm run showcase` to recreate the core showcase. That command resets only the explicitly guarded local disposable development fixtures. `npm run db:reset` instead creates a nominal starting world.
 
-Local app: port 3000, PID recorded in ignored `artifacts/server.pid`. A rebuild requires restarting the production-mode server to load changed code. Browser tests manage an isolated port-3001 server and reset only `helios_test`. Do not run integration and browser suites concurrently.
+Workspace: `C:/Users/Owner/Desktop/astra1`, local Git branch `main`. PostgreSQL Compose project `helios` uses loopback 5438, development `helios`, isolated tests `helios_test`, volume `helios_helios-data`. Migrations 001–006 are checksummed and immutable.
 
-Open **http://127.0.0.1:3000** and select **Enter Mission Control**. The standalone Playwright suite provides reproducible browser verification; the in-app browser integration could not initialize in this environment.
+The review preview uses `deploy/compose.local.yaml` at port 3002. The old host preview on 3000 was stopped; `artifacts/server.pid` is historical. Host development remains available through `npm run dev`. Browser tests used port 3013 because 3001 belongs to another project. Set `HELIOS_E2E_PORT` when needed. Integration and browser suites reset the same test database and must run sequentially. Unrelated services were left untouched.
 
-Next implementation action: define the M02 maintenance-work-order contract from the [roadmap](roadmap.md), then implement and verify that slice. No implementation task is currently running. Start the learning track at [upskilling/README.md](../../upskilling/README.md); the app remains usable while exercises are pending.
+The in-app browser integration could not initialize in this environment; standalone Playwright supplied browser verification. The local [deployment runbook](../../deploy/README.md) covers app/worker startup, stopping, image-based tests and backup rehearsal.
 
-## Limits and next milestone
+## Boundaries
 
-Local demo identity is not production authentication. Simulation advances in batches. There is no live AI, durable event delivery, maintenance/inventory, or cloud deployment. M02 adds a maintenance work order from an incident; M03 adds correct inventory reservations. Human learning remains unassessed in [the progress tracker](../../upskilling/progress.md).
+This is a local engineering simulation. Identity uses signed fixture personas; payments and physical incidents are simulated. Adviser output defaults to a labeled deterministic fixture. The optional OpenAI adapter has no live-call verification. Retrieval uses full-text search and a token-hash vector baseline, not learned semantic embeddings.
+
+Public authentication, cloud execution, real payments, live-model quality measurement and additional enterprise catalog features require a new concrete contract. The local workflow program is complete; these are not completed production integrations. The remaining learner action is optional review of the separate curriculum, with personal progress pending until demonstrated.
