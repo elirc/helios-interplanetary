@@ -35,4 +35,6 @@ One commit need not equal one milestone. Read the actual Git history rather than
 
 Use LAB mode when you are ready to practice. The completed app should stay functional while you work.
 
+For the next increment, review [25 proposed future-work stories](../../docs/project/future-work/README.md) and complete [the backlog-review lab](../labs/03-review-future-work.md). Start from a limitation or unanswered question in this build, choose a bounded story and predict its failure modes before implementation. The backlog preserves the distinction between delivered features and proposed extensions.
+
 Then read [Supervise a long run](06-supervising-long-runs.md) for a reusable execution prompt and an experiment based on the actual build's tool delays, environment conflict and verification sequence.

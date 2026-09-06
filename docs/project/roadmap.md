@@ -22,6 +22,8 @@ This roadmap describes the finite program in [Run 002](../exec-plans/002-complet
 
 ## Further work requires a new contract
 
+The [25-story review backlog](future-work/README.md) turns possible extensions into detailed proposals with acceptance criteria, dependencies, evidence requirements and learning exercises. Suggested priorities and review paths help select the next bounded contract; none of these stories has been implemented by adding the backlog.
+
 Public identity and cloud hosting, live payment integration, learned embeddings, live-model evaluation, and broader enterprise administration are outside the completed local contract. Select a specific outcome, acceptance criteria and operational environment before extending them.
 
 Human learning remains unassessed. The next learning action is to run a demo and reconstruct its invariant using the retrospective, then record your own evidence in the progress tracker.

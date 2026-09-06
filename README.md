@@ -74,6 +74,12 @@ upskilling/          Retrospective, lessons, labs, templates and separate soluti
 
 The [architecture guide](docs/architecture/complete-program.md) explains transaction locks, idempotency, leased delivery, time, approval boundaries and payment uncertainty. The system is a modular monolith with a separate worker and a PostgreSQL outbox. Domain state, audit events and outbox messages commit together. Database constraints protect inventory and balanced, immutable ledger entries; explicit tenant filtering is reinforced by composite foreign keys.
 
+## Further work to review
+
+Review [25 detailed future-work stories](docs/project/future-work/README.md) covering reliability, long-running advisers, evaluations, station operations, finance, identity and delivery. Each includes current-code references, acceptance criteria, prerequisites, verification steps and a learning exercise. All are proposed and awaiting review.
+
+The separate [backlog-review lab](upskilling/labs/03-review-future-work.md) shows how to select a story, challenge its assumptions and write a bounded agent execution contract.
+
 ## Local scope
 
 `DEMO_MODE=true` enables signed local personas, not production identity. The app checks its configured loopback origin. The payment provider and physical systems are simulations. Adviser output defaults to a clearly labeled deterministic fixture. An optional OpenAI Responses adapter requires explicit provider, model and key configuration; fixture evaluations do not measure live-model quality. Retrieval uses PostgreSQL full-text search and a documented token-hash vector baseline, not learned semantic embeddings.

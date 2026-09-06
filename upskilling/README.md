@@ -19,6 +19,8 @@ The durations below are suggestions for your study sessions, not claims about ag
 
 ## How to work with the agent
 
+After the retrospective, use [Lab 3: review future work](labs/03-review-future-work.md) with the [25 detailed stories](../docs/project/future-work/README.md). It connects the actual build's limitations to a new contract, a prediction about failure and a review of the resulting evidence. The stories are proposals; your review decisions and learning results remain pending.
+
 Use **BUILD** when you want implementation to proceed autonomously within a bounded contract. Use **LAB** when you want the agent to wait for your diagnosis or specification. Use **REVIEW** for evidence-based inspection. Use **EXPERIMENT** to compare one workflow change.
 
 For a lab, send:
@@ -42,6 +44,8 @@ The reusable prompts in [HELIOS-RUN-PROMPTS.md](../HELIOS-RUN-PROMPTS.md) cover 
 - [Lesson 3: long runs and recovery](lessons/03-long-runs-and-recovery.md)
 - [Lab 1: prove the invariants](labs/01-invariants.md)
 - [Lab 2: direct and evaluate the agent](labs/02-agent-supervision.md)
+- [Lab 3: turn future work into a supervised agent run](labs/03-review-future-work.md)
+- [25 proposed stories to review](../docs/project/future-work/README.md)
 - [Answer key for Lab 1](solutions/01-invariants.md) — attempt the lab first.
 - [Task contract template](templates/task-contract.md)
 - [Checkpoint template](templates/checkpoint.md)

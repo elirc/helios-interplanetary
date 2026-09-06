@@ -36,6 +36,8 @@ The in-app browser integration could not initialize in this environment; standal
 
 ## Boundaries
 
+The [future-work review backlog](future-work/README.md) contains 25 proposed stories grounded in this delivered checkpoint. Their status is awaiting review; the M01–M15 implementation and verification record above remain the completed baseline. The separate [review lab](../../upskilling/labs/03-review-future-work.md) supports choosing and supervising a later implementation.
+
 This is a local engineering simulation. Identity uses signed fixture personas; payments and physical incidents are simulated. Adviser output defaults to a labeled deterministic fixture. The optional OpenAI adapter has no live-call verification. Retrieval uses full-text search and a token-hash vector baseline, not learned semantic embeddings.
 
 Public authentication, cloud execution, real payments, live-model quality measurement and additional enterprise catalog features require a new concrete contract. The local workflow program is complete; these are not completed production integrations. The remaining learner action is optional review of the separate curriculum, with personal progress pending until demonstrated.
