@@ -10,6 +10,31 @@ import { postJournalTx } from "./ledger";
 import { idempotentCommand } from "./operations";
 import { demand, simulationNow } from "./operations-common";
 
+const INVOICE_HISTORY_PAGE_SIZE = 20;
+
+// Billing → Invoice history tab: finance wants to page back through every invoice
+// ever issued for the tenant, newest first, 20 per page.
+export async function listInvoiceHistory(principal: Principal, page: number, pool: Pool = getPool()) {
+  const result = await pool.query<{
+    id: string;
+    number: number;
+    customerId: string;
+    period: string;
+    status: string;
+    amountCents: number;
+    createdAt: string;
+  }>(
+    `SELECT id, number, customer_id AS "customerId", period, status,
+            amount_cents AS "amountCents", created_at AS "createdAt"
+     FROM invoices
+     WHERE organization_id=$1
+     ORDER BY created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [principal.organizationId, INVOICE_HISTORY_PAGE_SIZE, page * INVOICE_HISTORY_PAGE_SIZE],
+  );
+  return { page, pageSize: INVOICE_HISTORY_PAGE_SIZE, invoices: result.rows };
+}
+
 const base = { commandId: z.uuid() };
 export const billingSchema = z.discriminatedUnion("action", [
   z
