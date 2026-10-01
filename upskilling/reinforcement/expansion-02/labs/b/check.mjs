@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const subject = await import(process.argv.includes('--reference') ? '../../_answers/b.mjs' : './exercise.mjs');
+const {summarizeRequests:s}=subject;const x=(status,durationMs,route='/orders/:id')=>({route,status,durationMs});
+test('zero duration contributes to denominator',()=>{const r=s([x(200,0),x(200,100)])[0];assert.equal(r.count,2);assert.equal(r.meanMs,50);assert.equal(r.maxMs,100);});
+test('errors have their own group',()=>assert.deepEqual(s([x(500,50),x(200,10)]).map(g=>g.status),[200,500]));
+test('routes remain separate and sorted',()=>assert.deepEqual(s([x(200,1,'/z'),x(200,2,'/a')]).map(g=>g.route),['/a','/z']));
+test('empty input is no observations',()=>assert.deepEqual(s([]),[]));
+test('negative and nonfinite values reject',()=>{for(const n of [-1,NaN,Infinity])assert.throws(()=>s([x(200,n)]),TypeError);});
+test('frozen samples remain intact',()=>{const a=Object.freeze(x(200,5));assert.equal(s(Object.freeze([a]))[0].sumMs,5);assert.equal(a.durationMs,5);});

@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const subject = await import(process.argv.includes('--reference') ? '../_interviewer/reference.mjs' : './exercise.mjs');
+const {inspectReceipts:f}=subject;const r=(org,id,fingerprint='p',result='ok')=>({org,id,fingerprint,result});
+test('identical retries form one consistent group',()=>assert.deepEqual(f([r('a','1'),r('a','1')]),[{org:'a',id:'1',state:'consistent',attempts:2}]));
+test('changed payload is a conflict',()=>assert.equal(f([r('a','1'),r('a','1','q')])[0].state,'conflict'));
+test('changed result is a conflict',()=>assert.equal(f([r('a','1'),r('a','1','p','other')])[0].state,'conflict'));
+test('organization is part of identity',()=>assert.equal(f([r('a','1'),r('b','1')]).length,2));
+test('tuple keys avoid delimiter collisions',()=>assert.equal(f([r('a|b','c'),r('a','b|c')]).length,2));
+test('first-seen order and empty input are explicit',()=>{assert.deepEqual(f([]),[]);assert.deepEqual(f([r('b','2'),r('a','1')]).map(x=>x.org),['b','a']);});
+test('frozen input remains unchanged and conflict persists',()=>{const rows=Object.freeze([Object.freeze(r('a','1')),Object.freeze(r('a','1','q')),Object.freeze(r('a','1'))]);assert.equal(f(rows)[0].state,'conflict');assert.equal(rows[0].fingerprint,'p');});

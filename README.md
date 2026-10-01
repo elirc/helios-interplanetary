@@ -85,3 +85,9 @@ The separate [backlog-review lab](upskilling/labs/03-review-future-work.md) show
 `DEMO_MODE=true` enables signed local personas, not production identity. The app checks its configured loopback origin. The payment provider and physical systems are simulations. Adviser output defaults to a clearly labeled deterministic fixture. An optional OpenAI Responses adapter requires explicit provider, model and key configuration; fixture evaluations do not measure live-model quality. Retrieval uses PostgreSQL full-text search and a documented token-hash vector baseline, not learned semantic embeddings.
 
 The local milestone program implements the six workflows above. The original enterprise catalog is broader than this delivery. Public authentication, cloud deployment, real payments and live-model evaluation remain external integration work. No public deployment or paid provider call is implied by the local build.
+
+## Source-based improvement course
+
+[Start the course](astraupskill/README.md). Trace a late PostgreSQL repair failure, same-command recovery, and idempotent replay.
+
+[Repair rollback course](upskilling/repair-rollback/README.md) documents the new late-failure regression and its separate exercises and solutions.

@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const subject = await import(process.argv.includes('--reference') ? '../../_answers/a.mjs' : './exercise.mjs');
+const {summarizeJournals:s}=subject;const l=(organizationId,journalId,side,cents)=>({organizationId,journalId,side,cents});
+test('balanced group reports exact strings',()=>assert.deepEqual(s([l('A','J','DEBIT',100),l('A','J','CREDIT',100)])[0],{organizationId:'A',journalId:'J',debit:'100',credit:'100',balanced:true}));
+test('opposite tenant errors do not cancel',()=>{const r=s([l('A','J','DEBIT',100),l('A','J','CREDIT',90),l('B','J','DEBIT',90),l('B','J','CREDIT',100)]);assert.deepEqual(r.map(x=>x.balanced),[false,false]);});
+test('journals in one tenant remain separate',()=>assert.equal(s([l('A','J1','DEBIT',1),l('A','J2','CREDIT',1)]).length,2));
+test('large accumulation stays exact',()=>assert.equal(s([l('A','J','DEBIT',Number.MAX_SAFE_INTEGER),l('A','J','DEBIT',Number.MAX_SAFE_INTEGER)])[0].debit,'18014398509481982'));
+test('invalid side or amount rejects',()=>{for(const x of [l('A','J','OTHER',1),l('A','J','DEBIT',0),l('A','J','CREDIT',1.5)])assert.throws(()=>s([x]),TypeError);});
+test('empty and frozen inputs work',()=>{assert.deepEqual(s([]),[]);const x=Object.freeze(l('A','J','DEBIT',1));assert.equal(s(Object.freeze([x]))[0].debit,'1');});

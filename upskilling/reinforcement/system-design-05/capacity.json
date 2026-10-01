@@ -1,0 +1,39 @@
+{
+  "project": "Helios / astra1",
+  "assumption_status": "hypothetical teaching load, not measured",
+  "calculations": [
+    {
+      "label": "Illustrative operations read rate",
+      "kind": "readRps",
+      "args": {
+        "active": 300,
+        "readsPerMinute": 4
+      },
+      "expected": 20,
+      "unit": "requests/s"
+    },
+    {
+      "label": "Worker recovery while new intents continue",
+      "kind": "queueDrain",
+      "args": {
+        "backlog": 900,
+        "arrivalsPerSecond": 3,
+        "workers": 3,
+        "secondsPerJob": 0.5
+      },
+      "expected": 300,
+      "unit": "seconds"
+    },
+    {
+      "label": "Thirty-day logical history at sustained five writes/s",
+      "kind": "storageGB",
+      "args": {
+        "writesPerSecond": 5,
+        "bytesPerWrite": 2000,
+        "days": 30
+      },
+      "expected": 25.92,
+      "unit": "decimal GB"
+    }
+  ]
+}

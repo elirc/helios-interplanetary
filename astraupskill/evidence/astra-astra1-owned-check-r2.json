@@ -1,0 +1,23 @@
+{
+  "project": "astra1",
+  "id": "a8435f7ed53c",
+  "command": [
+    "C:\\Python313\\python.exe",
+    "scripts/test-owned-postgres.py",
+    "--mode",
+    "check"
+  ],
+  "cwd": "C:\\Users\\Owner\\Desktop\\AstraOrganized2\\astra-remaining-improvements\\stage\\a8435f7ed53c",
+  "environmentOverrides": {
+    "PYTHONIOENCODING": "utf-8",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "startedAt": "2026-09-20T21:48:48.645922+00:00",
+  "status": "complete",
+  "log": "astra-astra1-owned-check-r2.log",
+  "pid": 21108,
+  "exitCode": 0,
+  "passed": true,
+  "finishedAt": "2026-09-20T22:29:06.520067+00:00",
+  "elapsedSeconds": 2417.87
+}

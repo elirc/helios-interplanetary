@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const subject = await import(process.argv.includes('--reference') ? '../_answers/reference.mjs' : './exercise.mjs');
+const {pageInvoices:p}=subject;
+const rows=Object.freeze([{id:'a',tenantId:'A',createdAt:20},{id:'b',tenantId:'A',createdAt:20},{id:'c',tenantId:'A',createdAt:20},{id:'d',tenantId:'A',createdAt:10},{id:'z',tenantId:'B',createdAt:30}].map(Object.freeze));
+test('ties use descending IDs and tenant is filtered first',()=>assert.deepEqual(p(rows,{tenantId:'A',limit:2}).map(r=>r.id),['c','b']));
+test('exclusive cursor produces remaining rows once',()=>assert.deepEqual(p(rows,{tenantId:'A',limit:2,cursor:{createdAt:20,id:'b'}}).map(r=>r.id),['a','d']));
+test('cursor row need not still exist',()=>assert.deepEqual(p(rows.filter(r=>r.id!=='b'),{tenantId:'A',limit:3,cursor:{createdAt:20,id:'b'}}).map(r=>r.id),['a','d']));
+test('empty tenant and exhausted page are empty',()=>{assert.deepEqual(p(rows,{tenantId:'C',limit:2}),[]);assert.deepEqual(p(rows,{tenantId:'A',limit:2,cursor:{createdAt:10,id:'d'}}),[]);});
+test('limit is validated',()=>{for(const limit of [0,101,1.5,'2'])assert.throws(()=>p(rows,{tenantId:'A',limit}),RangeError);});
+test('source order and row references are preserved',()=>{const r=p(rows,{tenantId:'A',limit:1});assert.equal(r[0],rows[2]);assert.equal(rows[0].id,'a');});
+test('newer insert ahead of cursor does not change later page',()=>{const next=[...rows,{id:'x',tenantId:'A',createdAt:40}];assert.deepEqual(p(next,{tenantId:'A',limit:3,cursor:{createdAt:20,id:'b'}}).map(r=>r.id),['a','d']);});
