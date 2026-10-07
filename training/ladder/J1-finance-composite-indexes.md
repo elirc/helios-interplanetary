@@ -24,13 +24,13 @@ Migrations are applied by `src/server/migrations.ts`. Read all 33 lines of it be
 ## Constraints
 - **A new migration file**, `db/migrations/007-<name>.sql`. Why can't you add the lines to `005-finance-support-security.sql`? (See `migrations.ts:22-23`.)
 - Decide whether `CREATE INDEX CONCURRENTLY` is possible **with this migration runner**. Look at `migrations.ts:10` and at
-  [curriculum 07](../../../opusorganize/apprenticeship/curriculum/07-zero-downtime-migrations.md). Write down what you'd do instead for a large production table.
+  curriculum 07 (external apprenticeship curriculum, not in this repo). Write down what you'd do instead for a large production table.
 - Name the indexes after the sibling convention (`<table>_tenant_time`).
 - Don't change any query text in this ticket. INC-001 (keyset pagination) and M1 (audit OR) are separate.
 
 ## Definition of done
 - `007-*.sql` exists with four `CREATE INDEX` statements, one per row of the table above.
-- [Docker, currently down] `npm run db:migrate` succeeds on a DB already at 006. `EXPLAIN` of `hub.ts:139`'s query for the seeded tenant shows no `Sort` node
+- [Docker] `npm run db:migrate` succeeds on a DB already at 006. `EXPLAIN` of `hub.ts:139`'s query for the seeded tenant shows no `Sort` node
   (use `SET enable_seqscan = off` on demo-scale data, or the planner will rightly prefer a seq scan of 20 rows).
 - [Docker] `npm run test:integration` still passes (billing suite: `tests/integration/billing.test.ts`).
 - No-Docker path: a PR description that lists, for each index, the query it serves (file:line) and why the column order is right.

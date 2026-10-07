@@ -1,97 +1,41 @@
 # Separate failed execution, recovery, and replay
 
-Exercise one: list the expected state of the work order, incident, crew, inventory, postmortem table, audit count, and command receipt immediately after the injected failure. Explain why the correct inventory result is still reserved rather than consumed or released.
+Write your answer before opening [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md). Exercises 1-3 and 6 need only an editor and Node 22; 4-5 need PostgreSQL.
 
-Exercise two: remove the trigger and resend the exact command object. Predict replayed and the durable receipt count. Then send it again and predict the second replay flag and inventory values. State why changing the command identifier between these calls would fail to test the intended recovery contract.
+## Exercise 1: predict the post-failure state
 
-Exercise three: move receipt insertion outside the transaction in a disposable copy. Describe two possible inconsistencies depending on whether the receipt or domain effects commit first. Identify which existing assertions would catch the late-failure version of that defect.
+**Goal:** List the state of the work order, incident, crew member `org-helios-crew-1`, local stock, postmortems, audit count, and command receipt immediately after the injected failure. Explain why stock is still *reserved* rather than consumed or released.
 
-Exercise four: omit finally cleanup and let an assertion fail. Explain how the next test could fail for an unrelated reason. Propose a cleanup strategy that removes only the test-owned trigger and function without resetting the user's development database.
+**Check:** Compare with the seven assertions at `tests/integration/repair.test.ts:283-323`. Then confirm the consumption call you expected to be undone: `grep -n "closeReservationTx(client, p, work, true)" src/server/maintenance.ts` should print line 184, which runs *before* the postmortem insert at line 208.
 
-Exercise five: compare a passing targeted integration test with a passing browser repair flow. Identify what each establishes and what remains unverified about deployment, real physical equipment, external models, and the learner's understanding. Keep those claims separate in a review report.
+## Exercise 2: model the receipt, then break it
 
-## Source excerpt
+**Goal:** Prove to yourself why `operations.ts:39-43` inserts the receipt inside the transaction. In a scratch folder **outside the repo**, create `receipt-model.test.mjs` that models `db.ts` `transaction()` (copy state on BEGIN, keep the copy on COMMIT, discard it on throw) and `idempotentCommand`. Write two tests: (a) receipt inside the transaction: fail, retry (`replayed:false`), replay (`replayed:true`), final stock `0/0` and one postmortem; (b) receipt saved *before* the work commits: after a failed attempt the retry returns `replayed:true` and the repair never happens.
 
-From [tests/integration/repair.test.ts](../../tests/integration/repair.test.ts).
+**Check:** `node --test receipt-model.test.mjs` reports `# pass 2`. Then flip the bug: in (b), what would go wrong if the receipt were saved *after* the commit in a separate transaction and the process crashed between them? Write one sentence.
 
-```ts
-  try {
-    await assert.rejects(executeOperation(actor, input, pool), /injected postmortem failure/);
-    assert.equal(
-      (await pool.query("SELECT status FROM work_orders WHERE id=$1", [f.workOrderId])).rows[0]
-        .status,
-      "VERIFYING",
-    );
-    assert.equal(
-      (await pool.query("SELECT status FROM incidents WHERE id=$1", [f.incidentId])).rows[0]
-        .status,
-      "ACKNOWLEDGED",
-    );
-    assert.equal(
-      (await pool.query("SELECT available FROM crew_members WHERE id='org-helios-crew-1'"))
-        .rows[0].available,
-      false,
-    );
-    assert.deepEqual(
-      (
-        await pool.query(
-          "SELECT on_hand,reserved FROM inventory_stock WHERE warehouse_id='org-helios-local'",
-        )
-      ).rows[0],
-      { on_hand: 1, reserved: 1 },
-    );
-    assert.equal(
-      (await pool.query("SELECT count(*)::int AS n FROM postmortems WHERE incident_id=$1", [f.incidentId]))
-        .rows[0].n,
-      0,
-    );
-    assert.equal(
-      (
-        await pool.query("SELECT count(*)::int AS n FROM audit_events WHERE organization_id=$1", [
-          actor.organizationId,
-        ])
-      ).rows[0].n,
-      auditBefore,
-    );
-    assert.equal(
-      (await pool.query("SELECT count(*)::int AS n FROM operation_commands WHERE id=$1", [commandId]))
-        .rows[0].n,
-      0,
-    );
-  } finally {
-    await pool.query("DROP TRIGGER IF EXISTS test_reject_postmortem_sol15 ON postmortems");
-    await pool.query("DROP FUNCTION IF EXISTS test_reject_postmortem_sol15()");
-  }
+## Exercise 3: same id, different payload
 
-  const recovered = await executeOperation(actor, input, pool);
-  const replayed = await executeOperation(actor, input, pool);
-  assert.equal(recovered.replayed, false);
-  assert.equal(replayed.replayed, true);
-  assert.deepEqual(
-    (
-      await pool.query(
-        "SELECT on_hand,reserved FROM inventory_stock WHERE warehouse_id='org-helios-local'",
-      )
-    ).rows[0],
-    { on_hand: 0, reserved: 0 },
-  );
-  assert.equal(
-    (await pool.query("SELECT status FROM incidents WHERE id=$1", [f.incidentId])).rows[0].status,
-    "RESOLVED",
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM postmortems WHERE incident_id=$1", [f.incidentId]))
-      .rows[0].n,
-    1,
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM operation_commands WHERE id=$1", [commandId]))
-      .rows[0].n,
-    1,
-  );
-});
-```
+**Goal:** Predict what happens if, after the successful recovery, you send `{ commandId, action: "complete_repair", workOrderId: <some other id> }` with the same `commandId`.
 
-## Course navigation
+**Check:** Find the branch: `grep -n "IDEMPOTENCY_CONFLICT" src/server/operations.ts` (line 34). State the status code and why this is not a replay. Then find the existing test that exercises this conflict for operations: `grep -n "IDEMPOTENCY_CONFLICT" tests/integration/repair.test.ts`.
 
-[README](README.md) / [01-CODEBASE-MAP](01-CODEBASE-MAP.md) / [02-CONCEPTS](02-CONCEPTS.md) / [03-WORKED-CHANGE](03-WORKED-CHANGE.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [05-PRACTICE](05-PRACTICE.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [07-TRACE-LAB](07-TRACE-LAB.md) / [VERIFICATION](VERIFICATION.md)
+## Exercise 4: why `finally` matters (PostgreSQL)
+
+**Goal:** In a disposable branch, change the rollback assertion `"VERIFYING"` (repair.test.ts:286) to `"COMPLETED"` and move the two `DROP` statements out of `finally` to after the `try` block.
+
+**Check:** Run the repair test file (see [04](04-TESTING-AND-DEBUGGING.md)). The target test fails as intended; observe whether the trigger survives (`SELECT tgname FROM pg_trigger WHERE tgname LIKE 'test_reject%'` in the test DB). Restore with `git checkout -- tests/` and confirm `git status` is clean.
+
+## Exercise 5: the integration test vs the browser flow
+
+**Goal:** For `npm run test:integration` passing and the coolant-repair Playwright case (`tests/e2e/operations.spec.ts:35`) passing, write what each establishes and what neither establishes (deployment, real equipment, external model providers, your own understanding).
+
+**Check:** Your list for the browser case must not include "rollback is atomic"; the e2e spec never injects a failure (`grep -n "trigger\|ROLLBACK" tests/e2e/operations.spec.ts` prints nothing).
+
+## Exercise 6: the second idempotency layer
+
+**Goal:** Explain why `complete_repair` checks `work.status === "COMPLETED"` (maintenance.ts:165) even though receipts exist. Describe a request sequence where the receipt does not help but this guard does.
+
+**Check:** Your sequence must use two *different* command ids. Confirm the guard returns without writing anything by reading lines 164-165.
+
+[04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md)

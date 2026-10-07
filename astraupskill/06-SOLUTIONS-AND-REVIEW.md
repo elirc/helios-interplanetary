@@ -1,89 +1,87 @@
 # Read the receipt as a commit witness
 
-After failure, the work order remains VERIFYING, the incident remains ACKNOWLEDGED, and the assigned crew remains unavailable. The local stock is one on hand and one reserved. No postmortem or receipt exists for the attempted completion, and the organization's audit count equals its captured baseline. Those values show that earlier repair effects did not escape the failed transaction.
+## Answers
 
-The recovery request uses the same identifier and payload and returns replayed false because the failed attempt left no receipt. The next identical request returns replayed true. Stock is consumed once, the incident is resolved, and the fixture has one postmortem and one command receipt. A new identifier would exercise another command rather than prove recovery of the original one.
+**1.** Work order `VERIFYING`, incident `ACKNOWLEDGED`, crew `available=false`, stock `on_hand=1, reserved=1`, zero postmortems, audit count equal to the baseline, zero receipts for `commandId`. Stock is still reserved because `closeReservationTx(..., true)` (maintenance.ts:184) ran inside the transaction that the trigger aborted; `ROLLBACK` undid the consumption, returning the row to its pre-call state, which was "reserved by `reserve_parts`".
 
-Saving a receipt independently can claim success for rolled-back work or leave committed effects without replay protection. The wrapper's transaction ties receipt insertion to the domain operation. Finally cleanup removes the specifically named failure trigger and function, preventing contamination even when assertions fail.
+**2.** A model that passes both tests (verified with `node --test` on Node 22):
 
-The targeted test establishes rollback and replay in the owned PostgreSQL environment. The browser flow establishes the visible repair sequence under the configured local simulation. Neither certifies real-world equipment, public deployment, live-model behavior, or human mastery. Review the new execution plan and accepted logs without rewriting the historical baseline's claims.
+```js
+import { test } from "node:test";
+import assert from "node:assert/strict";
 
-## Source excerpt
-
-From [src/server/operations.ts](../src/server/operations.ts).
-
-```ts
-export async function idempotentCommand<T extends object>(
-  p: Principal,
-  input: { commandId: string },
-  work: (client: PoolClient) => Promise<T>,
-  pool: Pool = getPool(),
-): Promise<T & { replayed?: boolean }> {
-  requireOperator(p);
-  return transaction(pool, async (client) => {
-    await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
-      `${p.organizationId}:command:${input.commandId}`,
-    ]);
-    const previous = (
-      await client.query<{ actor_id: string; same: boolean; result: T }>(
-        "SELECT actor_id,payload=$3::jsonb AS same,result FROM operation_commands WHERE organization_id=$1 AND id=$2",
-        [p.organizationId, input.commandId, JSON.stringify(input)],
-      )
-    ).rows[0];
-    if (previous) {
-      if (!previous.same || previous.actor_id !== p.id)
-        throw new DomainError(
-          409,
-          "IDEMPOTENCY_CONFLICT",
-          "This command ID belongs to different input or actor.",
-        );
-      return { ...previous.result, replayed: true };
-    }
-    const result = await work(client);
-    await client.query(
-      "INSERT INTO operation_commands(organization_id,id,actor_id,payload,result) VALUES($1,$2,$3,$4,$5)",
-      [p.organizationId, input.commandId, p.id, JSON.stringify(input), JSON.stringify(result)],
-    );
+function makeDb() {
+  let state = { reserved: 1, onHand: 1, postmortems: 0, receipts: new Map() };
+  const clone = (s) => ({ ...s, receipts: new Map(s.receipts) });
+  return {
+    get: () => state,
+    async transaction(work) {
+      const draft = clone(state);       // BEGIN
+      const result = await work(draft); // throw -> draft discarded (ROLLBACK)
+      state = draft;                    // COMMIT
+      return result;
+    },
+  };
+}
+async function idempotentCommand(db, input, work, { receiptOutside = false } = {}) {
+  if (receiptOutside) {
+    const prev = db.get().receipts.get(input.commandId);
+    if (prev) return { ...prev, replayed: true };
+    db.get().receipts.set(input.commandId, { ok: true }); // BUG: saved before the work commits
+    return { ...(await db.transaction(work)), replayed: false };
+  }
+  return db.transaction(async (tx) => {
+    const prev = tx.receipts.get(input.commandId);
+    if (prev) return { ...prev, replayed: true };
+    const result = await work(tx);
+    tx.receipts.set(input.commandId, result);
     return { ...result, replayed: false };
   });
 }
+const completeRepair = (fail) => async (tx) => {
+  tx.onHand -= 1; tx.reserved -= 1;
+  if (fail()) throw new Error("injected postmortem failure");
+  tx.postmortems += 1;
+  return { ok: true };
+};
 
-export async function executeOperation(
-  p: Principal,
-  raw: unknown,
-  pool: Pool = getPool(),
-): Promise<CommandResult> {
-  const input = operationSchema.parse(raw);
-  return idempotentCommand(p, input, (client) => operationTx(client, p, input), pool);
-}
-export async function operationTx(
-  client: PoolClient,
-  p: Principal,
-  input: Operation,
-): Promise<CommandResult> {
-  switch (input.action) {
-    case "create_work_order":
-      return createWorkOrderTx(client, p, input.incidentId);
-    case "reserve_parts":
-      return reservePartsTx(client, p, (await lockWorkOrder(client, p, input.workOrderId)).work);
-    case "request_purchase":
-      return requestPurchaseTx(client, p, input.workOrderId);
-    case "approve_purchase":
-    case "reject_purchase":
-    case "cancel_purchase":
-      return decidePurchaseTx(client, p, input.purchaseId, input.action);
-    case "dispatch_purchase":
-      return dispatchPurchaseTx(client, p, input.purchaseId);
-    case "delay_shipment":
-    case "reroute_shipment":
-    case "deliver_shipment":
-      return shipmentCommandTx(client, p, input.shipmentId, input.action);
-    default:
-      return maintenanceCommandTx(client, p, input);
-  }
-}
+test("receipt inside the transaction: fail, recover, replay", async () => {
+  const db = makeDb(); let fail = true; const input = { commandId: "c1" };
+  await assert.rejects(idempotentCommand(db, input, completeRepair(() => fail)), /injected/);
+  assert.equal(db.get().reserved, 1);
+  assert.equal(db.get().receipts.size, 0);
+  fail = false;
+  assert.equal((await idempotentCommand(db, input, completeRepair(() => fail))).replayed, false);
+  assert.equal((await idempotentCommand(db, input, completeRepair(() => fail))).replayed, true);
+  assert.deepEqual([db.get().onHand, db.get().reserved, db.get().postmortems], [0, 0, 1]);
+});
+
+test("receipt outside the transaction: a failed repair looks complete", async () => {
+  const db = makeDb(); let fail = true; const input = { commandId: "c1" };
+  await assert.rejects(idempotentCommand(db, input, completeRepair(() => fail), { receiptOutside: true }));
+  fail = false;
+  const retry = await idempotentCommand(db, input, completeRepair(() => fail), { receiptOutside: true });
+  assert.equal(retry.replayed, true);    // the retry never runs the repair
+  assert.equal(db.get().postmortems, 0);
+  assert.equal(db.get().reserved, 1);
+});
 ```
 
-## Course navigation
+Receipt-after-commit in a separate transaction fails the other way: a crash between the two commits leaves a completed repair with no receipt, so a client retry with the same id runs the work again. Here the `COMPLETED` guard (maintenance.ts:165) would return early, but other actions (for example `reserve_parts`) have no such guard. In the real test, the rollback assertion on `operation_commands` (repair.test.ts:319-323) is what catches the receipt-before-commit variant.
 
-[README](README.md) / [01-CODEBASE-MAP](01-CODEBASE-MAP.md) / [02-CONCEPTS](02-CONCEPTS.md) / [03-WORKED-CHANGE](03-WORKED-CHANGE.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [05-PRACTICE](05-PRACTICE.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [07-TRACE-LAB](07-TRACE-LAB.md) / [VERIFICATION](VERIFICATION.md)
+**3.** 409 `IDEMPOTENCY_CONFLICT` (operations.ts:31-35): the stored payload differs, so this is a rejected reuse of an id, not a replay. Existing coverage: `repair.test.ts:18-32` ("binds command payload"). The `IDEMPOTENCY_CONFLICT` hits in `mission.test.ts` (lines 97, 155, 184) are for telemetry readings and scenario runs, which have their own idempotency checks; they do not exercise `idempotentCommand`.
+
+**4.** With cleanup outside `finally`, the failing assertion throws past the `DROP` statements, the trigger survives in `helios_test`. `resetFixtures` does not drop triggers (`grep -i trigger src/server/fixtures.ts` prints nothing), so every later test or run that completes a repair against that database fails with "injected postmortem failure". (The owned temp cluster hides this because it is deleted after each run, which is exactly why the `finally` matters on a long-lived test database.) `DROP ... IF EXISTS` on the two specifically named objects is the targeted cleanup; never reset the developer database.
+
+**5.** Integration test: rollback + receipt semantics on real PostgreSQL. Browser case: the visible repair path works end to end in the local simulation. Neither covers deployment, real equipment, live model providers, or human mastery.
+
+**6.** Two different clients (or a client that lost the response and generated a fresh id) send `complete_repair` with ids A and B. The receipt for A does not match B, so B's work runs; the `COMPLETED` guard makes it a no-op instead of consuming stock a second time.
+
+## Senior-review notes (verified against the code)
+
+1. **`transaction()` can mask the original error and recycle a broken connection.** `src/server/db.ts:26-31`: if `ROLLBACK` itself throws (for example, the connection dropped mid-transaction), that error replaces the original one, and `client.release()` is called without an error argument, so node-postgres returns the client to the pool instead of destroying it. A safer shape is `try { await client.query("ROLLBACK") } catch {}`, rethrow the original, and `client.release(rollbackFailed ? err : undefined)`.
+2. **Authorization runs before replay.** `requireOperator` (operations.ts:19) executes before the receipt lookup. If an operator's role changes between a commit and the client's retry, the retry gets 403 even though the command committed. That is defensible (never leak results to an unauthorised caller), but the API contract should say so.
+3. **Replay returns the stored result, not current state.** `previous.result` (operations.ts:37) is the response as of the original commit. Callers that need fresh state must re-read.
+4. **Test coupling to seed data.** The regression hard-codes `org-helios-crew-1` and `warehouse_id='org-helios-local'`, and `SET on_hand=1` updates every SKU in that warehouse. Fine for a seeded fixture; a seed change would break it in a confusing way.
+
+[05-PRACTICE](05-PRACTICE.md) / [07-TRACE-LAB](07-TRACE-LAB.md)

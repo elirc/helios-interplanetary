@@ -1,19 +1,10 @@
 # Fail at the final postmortem insert
 
-The new test first prepares a valid repair using the existing application commands. It reserves one local item, assigns an eligible crew member, starts repair, completes checklist tasks in order, begins verification, and supplies fresh nominal telemetry. This setup avoids confusing a prerequisite rejection with the intended late database failure.
+Walkthrough of `tests/integration/repair.test.ts:250-355`. The file's `beforeEach` calls `resetFixtures(pool)` (line 15), so every test starts from seed data.
 
-It captures the organization's audit count and creates a PostgreSQL trigger function that raises an injected exception before postmortem insertion. The real executeOperation call must reject with that message. The test then queries work-order status, incident status, crew availability, inventory counts, postmortems, audit rows, and the command receipt.
-
-The trigger and function are removed in finally so an assertion failure cannot leave failure injection active for later tests. The same command object is then submitted twice: first recovery, then replay. Assertions check replay flags, one inventory consumption, resolved incident state, one postmortem, and one receipt.
-
-Production repair code already contains the transaction and is preserved. The added helper and regression make that behavior reviewable under a concrete late failure. The execution plan records this bounded scope separately from the prior local M01–M15 completion record, avoiding a claim that the earlier application was rebuilt in this pass.
-
-## Source excerpt
-
-From [tests/integration/repair.test.ts](../../tests/integration/repair.test.ts).
+## 1. Build a legitimate VERIFYING repair (lines 251-264)
 
 ```ts
-test("late completion failure rolls back every repair effect and the same command can recover", async () => {
   const f = await repairFixture(pool);
   const fields = { workOrderId: f.workOrderId };
   await pool.query("UPDATE inventory_stock SET on_hand=1 WHERE warehouse_id='org-helios-local'");
@@ -28,98 +19,33 @@ test("late completion failure rolls back every repair effect and the same comman
     { runId: randomUUID(), assetId: f.assetId, kind: "nominal", seed: 23 },
     pool,
   );
+```
 
-  const commandId = randomUUID();
-  const input = { commandId, action: "complete_repair" as const, ...fields };
-  const auditBefore = (
-    await pool.query("SELECT count(*)::int AS n FROM audit_events WHERE organization_id=$1", [
-      actor.organizationId,
-    ])
-  ).rows[0].n;
+Every step goes through the real `executeOperation`. Setting `on_hand=1` makes the later inventory assertion exact (`{1,1}` before, `{0,0}` after). The nominal scenario supplies the "newer nominal telemetry" that `complete_repair` demands (`src/server/maintenance.ts:177-183`); without it the call would fail with `VERIFICATION_REQUIRED` for the wrong reason.
 
-  await pool.query(`
-    CREATE OR REPLACE FUNCTION test_reject_postmortem_sol15() RETURNS trigger
-    LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected postmortem failure'; END $$;
-    CREATE TRIGGER test_reject_postmortem_sol15
-    BEFORE INSERT ON postmortems
-    FOR EACH ROW EXECUTE FUNCTION test_reject_postmortem_sol15();
-  `);
-  try {
-    await assert.rejects(executeOperation(actor, input, pool), /injected postmortem failure/);
-    assert.equal(
-      (await pool.query("SELECT status FROM work_orders WHERE id=$1", [f.workOrderId])).rows[0]
-        .status,
-      "VERIFYING",
-    );
-    assert.equal(
-      (await pool.query("SELECT status FROM incidents WHERE id=$1", [f.incidentId])).rows[0]
-        .status,
-      "ACKNOWLEDGED",
-    );
-    assert.equal(
-      (await pool.query("SELECT available FROM crew_members WHERE id='org-helios-crew-1'"))
-        .rows[0].available,
-      false,
-    );
-    assert.deepEqual(
-      (
-        await pool.query(
-          "SELECT on_hand,reserved FROM inventory_stock WHERE warehouse_id='org-helios-local'",
-        )
-      ).rows[0],
-      { on_hand: 1, reserved: 1 },
-    );
-    assert.equal(
-      (await pool.query("SELECT count(*)::int AS n FROM postmortems WHERE incident_id=$1", [f.incidentId]))
-        .rows[0].n,
-      0,
-    );
-    assert.equal(
-      (
-        await pool.query("SELECT count(*)::int AS n FROM audit_events WHERE organization_id=$1", [
-          actor.organizationId,
-        ])
-      ).rows[0].n,
-      auditBefore,
-    );
-    assert.equal(
-      (await pool.query("SELECT count(*)::int AS n FROM operation_commands WHERE id=$1", [commandId]))
-        .rows[0].n,
-      0,
-    );
+## 2. Capture a baseline and inject the failure (lines 266-280)
+
+The test fixes `commandId` and `input` once, records the organization's `audit_events` count, then creates `test_reject_postmortem_sol15()` and a `BEFORE INSERT` trigger on `postmortems` that raises `'injected postmortem failure'`. The postmortem insert is the **last** write in `complete_repair` (line 208), so every other repair effect has already been attempted when the trigger fires.
+
+## 3. Assert the rollback (lines 281-323)
+
+`assert.rejects(executeOperation(actor, input, pool), /injected postmortem failure/)`, then seven durable-state checks: work order `VERIFYING`, incident `ACKNOWLEDGED`, crew `available=false`, stock `{on_hand:1, reserved:1}`, zero postmortems for the incident, audit count equal to the baseline, zero `operation_commands` rows for `commandId`.
+
+## 4. Clean up in `finally` (lines 324-327)
+
+```ts
   } finally {
     await pool.query("DROP TRIGGER IF EXISTS test_reject_postmortem_sol15 ON postmortems");
     await pool.query("DROP FUNCTION IF EXISTS test_reject_postmortem_sol15()");
   }
-
-  const recovered = await executeOperation(actor, input, pool);
-  const replayed = await executeOperation(actor, input, pool);
-  assert.equal(recovered.replayed, false);
-  assert.equal(replayed.replayed, true);
-  assert.deepEqual(
-    (
-      await pool.query(
-        "SELECT on_hand,reserved FROM inventory_stock WHERE warehouse_id='org-helios-local'",
-      )
-    ).rows[0],
-    { on_hand: 0, reserved: 0 },
-  );
-  assert.equal(
-    (await pool.query("SELECT status FROM incidents WHERE id=$1", [f.incidentId])).rows[0].status,
-    "RESOLVED",
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM postmortems WHERE incident_id=$1", [f.incidentId]))
-      .rows[0].n,
-    1,
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM operation_commands WHERE id=$1", [commandId]))
-      .rows[0].n,
-    1,
-  );
 ```
 
-## Course navigation
+If an assertion fails, the trigger still goes away, so later tests in the run are not poisoned.
 
-[README](README.md) / [01-CODEBASE-MAP](01-CODEBASE-MAP.md) / [02-CONCEPTS](02-CONCEPTS.md) / [03-WORKED-CHANGE](03-WORKED-CHANGE.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [05-PRACTICE](05-PRACTICE.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [07-TRACE-LAB](07-TRACE-LAB.md) / [VERIFICATION](VERIFICATION.md)
+## 5. Recover, then replay (lines 329-354)
+
+The **same** `input` object is sent twice. The first call returns `replayed: false` (no receipt survived the rollback); the second returns `replayed: true`. Then: stock `{0,0}` (consumed once), incident `RESOLVED`, exactly one postmortem, exactly one receipt.
+
+Production code was not changed for this regression; the transaction already existed. The execution plan (`docs/exec-plans/003-repair-rollback-regression.md`) records this bounded scope separately from the earlier M01-M15 program.
+
+[02-CONCEPTS](02-CONCEPTS.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md)

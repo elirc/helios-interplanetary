@@ -27,7 +27,7 @@ a. It gives Postgres a unique target for **composite foreign keys**: an FK must 
    `(organization_id,id)` is that set.
 b. It makes a `payment_attempts` row for tenant A that points at an invoice owned by tenant B impossible.
    The FK requires the `(organization_id, invoice_id)` pair to exist in `invoices`. This is tenant-safe keys
-   ([curriculum 19](../../../opusorganize/apprenticeship/curriculum/19-rls-defense-in-depth.md)).
+   (curriculum 19 (external apprenticeship curriculum, not in this repo)).
 c. It helps the **filter** (the leading column is `organization_id`), so Postgres can find the tenant's rows. It doesn't help the **sort**:
    within one tenant, the index is ordered by `id` (a random uuid), not `created_at`, so a Sort node is still needed. That's INC-001 defect 1.
 
@@ -49,7 +49,7 @@ a. `[]`. `COALESCE(jsonb_agg(...),'[]'::jsonb)` at `hub.ts:14`. `jsonb_agg` over
 b. `samples 0`, `server_errors 0`, `p95_ms 0` (the `COALESCE(percentile_cont…,0)` at `hub.ts:27`).
 c. "0 errors, p95 0 ms" looks like the healthiest possible state, but it also means "we measured nothing".
    Combined with exercise 2, a tenant whose every request is a 401 shows exactly this. A dashboard needs to show `samples`
-   next to the rate, and ideally alert on zero traffic ([curriculum 09](../../../opusorganize/apprenticeship/curriculum/09-telemetry-correctness.md)).
+   next to the rate, and ideally alert on zero traffic (curriculum 09 (external apprenticeship curriculum, not in this repo)).
 
 ## 6. Duplicates?
 a. `queries.ts:28` selects the full `eventJson` object, `ORDER BY occurred_at DESC, id`, `LIMIT 100`.
@@ -88,7 +88,7 @@ test("contrast: an org-bearing span DOES reach the DB path", async () => {
 Note the ESM hoisting trap: `import` statements are hoisted above the `delete`. It still works here because
 `getPool()` reads `process.env` lazily, at call time. If an agent "fixes" this by moving the delete, ask it why.
 Name the test `CHARACTERIZATION:`. It pins current behaviour (the bug), and the INC-002 fix should *flip* the first assertion
-([curriculum 04](../../../opusorganize/apprenticeship/curriculum/04-characterization-tests.md)). UNVERIFIED: not executed (no node_modules).
+(curriculum 04 (external apprenticeship curriculum, not in this repo)). UNVERIFIED: not executed (no node_modules).
 
 ## 8. Verifying the sealed answer
 a. **Claim 1 is false.** `work_order_tasks` has `PRIMARY KEY(organization_id, work_order_id, task_key)` (`002:42`). Its first two

@@ -1,8 +1,8 @@
 # On-ramp — Helios warm-ups (do these before `training/`)
 
 Eight short exercises, 10–25 min each. Write your answer down **before** you open `learn/_answers/00-onramp.md`.
-Exercises 1–6 and 8 need only an editor. Exercise 7 needs `npm ci` (node_modules is currently absent) but **no Docker**.
-Anything marked [Docker] requires Docker, which is currently down. Skip that part and come back later.
+Exercises 1–6 and 8 need only an editor. Exercise 7 needs `npm ci` but **no Docker**.
+Anything marked [Docker] needs the Postgres container from `compose.yaml`; if you don't have Docker, skip that part and come back later.
 
 ---
 
@@ -101,7 +101,7 @@ b. Is claim 2 true in Postgres 17 (`compose.yaml`)? Draw the index's sort order 
 c. What's the corrected cost story for Q2? Which of the sealed answer's proposed fixes is unnecessary?
 d. [Docker] Confirm with `EXPLAIN (ANALYZE, BUFFERS)` on seeded data.
 
-This is the verify-before-trust habit ([curriculum 05](../../opusorganize/apprenticeship/curriculum/05-verify-before-trust.md)) applied to answer keys.
+This is the verify-before-trust habit (curriculum 05 (external apprenticeship curriculum, not in this repo)) applied to answer keys.
 A sealed answer is also an agent's output.
 
 ---

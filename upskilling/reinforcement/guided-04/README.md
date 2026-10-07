@@ -69,4 +69,4 @@ These model chapters are intentionally available in each project pack for a self
 
 The actual boundary to investigate is authorized server command and PostgreSQL transaction. Current source determines what the app does; a teaching model may introduce a simplified field, policy, or serialized execution order. Keep source reading, model execution, and application verification distinct. Human mastery remains unassessed until the learner produces their own explanation and evidence.
 
-Return to the [all-project guided route](<../../../../opusorganize/junior-reinforcement/guided-04/README.md>) for shared navigation and the measured content/preservation report.
+Return to the all-project guided route (external cross-project route, not in this repo) for shared navigation and the measured content/preservation report.

@@ -1,47 +1,24 @@
 # Trace the same command through three attempts
 
-Draw three columns labeled failed attempt, recovery, and replay. Use one command identifier across all columns. In the first, acquire the organization-scoped advisory lock, observe no receipt, and execute the real maintenance operation. Mark the inventory, work-order, crew, incident, and audit writes as tentative until commit.
+Draw three columns: **failed attempt**, **recovery**, **replay**. Use one command id across all three. For each row, write the file:line that executes.
 
-At the postmortem insert, fire the test trigger. Roll back the transaction and query the database from outside it. Record the original VERIFYING repair and reserved inventory, unchanged audit count, and absent receipt. The exception alone is not your evidence; the stored values are.
+| Step | Failed attempt | Recovery | Replay |
+|---|---|---|---|
+| `requireOperator` | operations.ts:19 passes | passes | passes |
+| `BEGIN` | db.ts:22 | db.ts:22 | db.ts:22 |
+| Advisory lock on `<org>:command:<id>` | operations.ts:21-23 | same | same |
+| Receipt lookup | operations.ts:24-29, no row | no row (the failed attempt left none) | row found, payload and actor match |
+| `operationTx` → `maintenanceCommandTx` | runs | runs | **skipped** (returns at operations.ts:37) |
+| Consume stock (maintenance.ts:184) | tentative | committed | not executed |
+| Work order / crew / incident / audit (186-200) | tentative | committed | not executed |
+| Postmortem insert (208) | **trigger raises** | inserted | not executed |
+| Receipt insert (operations.ts:40-43) | not reached | inserted | not executed |
+| End | `ROLLBACK` (db.ts:27), error rethrown | `COMMIT`, `replayed:false` | `COMMIT` (read-only), `replayed:true` |
 
-Remove the trigger and start the second column with the same input. Again there is no receipt, so the operation executes. This time the postmortem and receipt are written and the transaction commits. Record replayed false and one durable completion effect.
+After the first column, query the database from outside the transaction and record the original `VERIFYING` work order, reserved stock, unchanged audit count, and absent receipt. The exception alone is not your evidence; the stored values are.
 
-In the third column, find the saved receipt before executing maintenance. Confirm actor and payload match, then return its result with replayed true. No second inventory consumption or postmortem should occur. For a final thought experiment, alter the payload while keeping the identifier and trace the existing IDEMPOTENCY_CONFLICT branch. That is a rejected identifier reuse, not a valid replay of the same command.
+**Final thought experiment:** keep the id, change `workOrderId`, and trace a fourth column. It stops at operations.ts:31-35 with 409 `IDEMPOTENCY_CONFLICT`: a rejected reuse of an id, not a replay.
 
-## Source excerpt
+**Check:** every line number in your table should land on the statement you named; open each one. The test that drives columns 1-3 is `tests/integration/repair.test.ts:250-355`.
 
-From [tests/integration/repair.test.ts](../../tests/integration/repair.test.ts).
-
-```ts
-  const recovered = await executeOperation(actor, input, pool);
-  const replayed = await executeOperation(actor, input, pool);
-  assert.equal(recovered.replayed, false);
-  assert.equal(replayed.replayed, true);
-  assert.deepEqual(
-    (
-      await pool.query(
-        "SELECT on_hand,reserved FROM inventory_stock WHERE warehouse_id='org-helios-local'",
-      )
-    ).rows[0],
-    { on_hand: 0, reserved: 0 },
-  );
-  assert.equal(
-    (await pool.query("SELECT status FROM incidents WHERE id=$1", [f.incidentId])).rows[0].status,
-    "RESOLVED",
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM postmortems WHERE incident_id=$1", [f.incidentId]))
-      .rows[0].n,
-    1,
-  );
-  assert.equal(
-    (await pool.query("SELECT count(*)::int AS n FROM operation_commands WHERE id=$1", [commandId]))
-      .rows[0].n,
-    1,
-  );
-});
-```
-
-## Course navigation
-
-[README](README.md) / [01-CODEBASE-MAP](01-CODEBASE-MAP.md) / [02-CONCEPTS](02-CONCEPTS.md) / [03-WORKED-CHANGE](03-WORKED-CHANGE.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [05-PRACTICE](05-PRACTICE.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [07-TRACE-LAB](07-TRACE-LAB.md) / [VERIFICATION](VERIFICATION.md)
+[06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [VERIFICATION](VERIFICATION.md)

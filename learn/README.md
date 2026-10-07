@@ -9,25 +9,27 @@ It's in the portfolio as the place to learn **reading schemas against queries, p
 can trust** (`src/server/observability.ts`, `src/app/api/metrics/route.ts`). The exercises are in `training/`
 (B03). This guide is the on-ramp to them.
 
-## Machine state right now (read before session 1)
+## Environment notes (dated snapshot)
 
-- **`node_modules` is absent.** Run `npm ci` before anything that runs TypeScript (`npm test`, `npm run typecheck`).
+> Recorded when this guide was written (B08). Re-check on your machine; none of this is a property of the repo.
+
+- `node_modules` is not committed. Run `npm ci` before anything that runs TypeScript (`npm test`, `npm run typecheck`).
   Unit tests (`tests/unit/*.test.ts`) need **no database**.
-- **Docker is currently down** (the WSL distro is gone). Anything marked **[Docker]** below
-  (`npm run db:up`, `db:migrate`, `db:seed`, `test:integration`, `EXPLAIN ANALYZE`, `npm run dev`)
-  **requires Docker, which is currently down**. Every session has a **no-Docker path**: read the schema, predict,
-  then check against the sealed reasoned answers. When Docker comes back, redo the [Docker] exit criteria.
-- The repo has 7 uncommitted files that belong to someone else's in-progress work (`git status`). Don't commit them. Use worktrees for incident branches.
+- At authoring time Docker was unavailable on the author's machine. Anything marked **[Docker]** below
+  (`npm run db:up`, `db:migrate`, `db:seed`, `test:integration`, `EXPLAIN ANALYZE`, `npm run dev`) needs the
+  `postgres:17-alpine` container from `compose.yaml`. Every session also has a **no-Docker path**: read the schema,
+  predict, then check against the sealed reasoned answers.
+- Use `git worktree add` for incident branches so drill work never mixes with your main checkout.
 
 ## Prerequisites (do these first, ~2–3 h total)
 
-1. **Read a query plan and match an index to a query**: [curriculum 10 — query plans & indexes](../../opusorganize/apprenticeship/curriculum/10-query-plans-and-indexes.md).
+1. **Read a query plan and match an index to a query**: curriculum 10 — query plans & indexes (external apprenticeship curriculum, not in this repo).
    This page already cites this repo (the aggregate-then-limit trap).
-2. **Telemetry that lies by omission**: [curriculum 09 — telemetry correctness](../../opusorganize/apprenticeship/curriculum/09-telemetry-correctness.md).
-3. **Verifying code (and answers) you didn't write**: [curriculum 05 — verify before trust](../../opusorganize/apprenticeship/curriculum/05-verify-before-trust.md).
+2. **Telemetry that lies by omission**: curriculum 09 — telemetry correctness (external apprenticeship curriculum, not in this repo).
+3. **Verifying code (and answers) you didn't write**: curriculum 05 — verify before trust (external apprenticeship curriculum, not in this repo).
    You'll use it on agent output *and* on this repo's own sealed answers (see on-ramp exercise 8).
-4. **Characterization tests**: [curriculum 04](../../opusorganize/apprenticeship/curriculum/04-characterization-tests.md). You'll write the first test of the span exporter.
-5. **Why index builds are a migration concern**: [curriculum 07 — zero-downtime migrations](../../opusorganize/apprenticeship/curriculum/07-zero-downtime-migrations.md) (the `CONCURRENTLY` line).
+4. **Characterization tests**: curriculum 04 (external apprenticeship curriculum, not in this repo). You'll write the first test of the span exporter.
+5. **Why index builds are a migration concern**: curriculum 07 — zero-downtime migrations (external apprenticeship curriculum, not in this repo) (the `CONCURRENTLY` line).
 6. **How a request becomes a row here**: `upskilling/lessons/01-request-to-row.md` (existing, tracked, keep). Its "run it once" step is [Docker]; do the "Follow the code" half.
 
 ## Study route (10 sessions, ~9–10 h)
@@ -68,6 +70,6 @@ Legend: **HAND** = you do it yourself, no agent. **DELEGATE** = give it to a cod
 - You've directed an agent through J1 and M1 and caught at least two of its mistakes with the checklist.
 - COMPARE score ≥ 5/7 on the review. You can answer the interview TQs without notes.
 
-**Next repo:** **atlas** (`Desktop\gitvg\atlas`, training M1 / INC-001 / INC-003). It's the same plan-reading skill at
+**Next repo:** **atlas** (`elirc/atlas`, training M1 / INC-001 / INC-003). It's the same plan-reading skill at
 EF Core scale, then the SQL Server arc (curriculum 22). If you want tenant isolation next instead, go to **aaa1** (RLS lab, curriculum 19).
 The live-stack telemetry follow-on to INC-002 is **astraspacegameweb** LAB0 + M1.

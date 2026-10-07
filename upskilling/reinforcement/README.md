@@ -36,7 +36,7 @@ If setup blocks app work, finish the dependency-free lab and source-reading task
 
 ## Concepts to revisit when stuck
 
-- [10-query-plans-and-indexes.md](<../../../opusorganize/apprenticeship/curriculum/10-query-plans-and-indexes.md>)
-- [04-characterization-tests.md](<../../../opusorganize/apprenticeship/curriculum/04-characterization-tests.md>)
+- 10-query-plans-and-indexes.md (external apprenticeship curriculum, not in this repo)
+- 04-characterization-tests.md (external apprenticeship curriculum, not in this repo)
 
-The [shared practice protocol](../../../opusorganize/junior-reinforcement/PRACTICE_PROTOCOL.md) explains evidence, Git hygiene, and when to use an agent. Keep answers closed until your own attempt is written. Your personal learning status starts **not assessed**.
+The shared practice protocol (external cross-project route, not in this repo) explains evidence, Git hygiene, and when to use an agent. Keep answers closed until your own attempt is written. Your personal learning status starts **not assessed**.

@@ -25,7 +25,7 @@ So the table grows with sensor traffic, not with incidents.
 
 ## Definition of done
 - Both call sites changed, or both served by the new index with the query text untouched. A reviewer can see why the two can't drift apart again.
-- A test that pins **ordering and limits** for both callers. `tests/integration/mission.test.ts` / `intelligence.test.ts` are the homes. [Docker, currently down]
+- A test that pins **ordering and limits** for both callers. `tests/integration/mission.test.ts` / `intelligence.test.ts` are the homes. [Docker]
 - [Docker] `EXPLAIN (ANALYZE, BUFFERS)` before/after for one incident on a tenant with ≥ 50k `TelemetryRecorded` rows. Say how you generated them
   (e.g. `npm run scenario` in a loop, or an `INSERT … SELECT generate_series`).
 - No-Docker path: a PR description with the predicted before/after plan trees, marked UNVERIFIED.

@@ -5,9 +5,9 @@ The loop for every drill: **(1) you write the spec by hand → (2) an agent impl
 Do the drill's diagnosis first (the related `training/` exercise). Never let the agent diagnose for you.
 
 Setup for every drill: `git worktree add ../astra1-drill-X main` (or the incident branch). Run `npm ci` inside it.
-**Don't** point an agent at the main checkout: it holds 7 uncommitted files that belong to someone else's in-progress work.
-[Docker] steps require Docker, which is currently down. Until it's back, grade the agent on static checks and on claims it
-*can't* have verified. An agent that says "tested against Postgres" today is fabricating.
+**Don't** point an agent at your main checkout; keep its changes in the worktree so you review a clean diff.
+If you can't run [Docker] steps, grade the agent on static checks and on claims it *can't* have verified: an agent that says
+"tested against Postgres" without a running database is fabricating.
 
 ---
 
@@ -65,7 +65,7 @@ Source: `training/incidents/001-invoice-history-pagination.md` on branch `traini
 **Tenant safety invariants** (easy to break during a "perf rewrite")
 - [ ] Every new or rewritten query still has `organization_id=$1` in **every** branch, including each side of a `UNION` and each subquery.
 - [ ] Tenant id comes from `principalFromRequest` (`src/server/identity.ts:108-119`), never from a query param or body.
-- [ ] Composite FKs `(organization_id, x)` are preserved in any new table ([curriculum 19](../../opusorganize/apprenticeship/curriculum/19-rls-defense-in-depth.md)).
+- [ ] Composite FKs `(organization_id, x)` are preserved in any new table (curriculum 19 (external apprenticeship curriculum, not in this repo)).
 
 **Behaviour and contracts**
 - [ ] Ordering, limits and projections of existing reads are unchanged unless the spec said otherwise. Diff the SQL strings.

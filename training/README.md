@@ -3,8 +3,8 @@
 Focus of this batch: **raw-SQL performance diagnosis** and **telemetry correctness** — deliberately *not*
 authz/concurrency (already saturated elsewhere in this program; see
 `apprenticeship\COMPETENCY_GRAPH.md`). Central concept pages this pack drills against (read, don't
-re-explain): [`10-query-plans-and-indexes.md`](../../opusorganize/apprenticeship/curriculum/10-query-plans-and-indexes.md),
-[`09-telemetry-correctness.md`](../../opusorganize/apprenticeship/curriculum/09-telemetry-correctness.md).
+re-explain): `10-query-plans-and-indexes.md` (external apprenticeship curriculum, not in this repo),
+`09-telemetry-correctness.md` (external apprenticeship curriculum, not in this repo).
 
 This repo already has two rich, unrelated learning trees — `astraupskill/` (generic template) and
 `upskilling/` (bespoke build retrospective). Neither touches SQL performance or telemetry, so there's no
